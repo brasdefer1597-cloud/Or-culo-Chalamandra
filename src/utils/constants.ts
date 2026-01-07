@@ -2,6 +2,7 @@ import { MethodType, ContextType, OracleData } from "../types";
 
 export const APP_NAME = "Oráculo Chalamandra";
 export const APP_TAGLINE = "Decodifica tu caos en 90 segundos.";
+export const BUY_ME_COFFEE_URL = "https://www.buymeacoffee.com/decox";
 
 export const ORACLE_BANK: OracleData = {
   [MethodType.SIX_HATS]: [
