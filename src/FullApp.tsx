@@ -4,9 +4,9 @@ import { Footer } from './components/Footer';
 import { OracleForm } from './components/OracleForm';
 import { OracleResult } from './components/OracleResult';
 import { FormData } from './types';
-import { APP_TAGLINE } from './constants';
+import { APP_TAGLINE } from './utils/constants';
 
-const App: React.FC = () => {
+const FullApp: React.FC = () => {
   const [formData, setFormData] = useState<FormData | null>(null);
 
   const handleSubmit = (data: FormData) => {
@@ -51,4 +51,4 @@ const App: React.FC = () => {
   );
 };
 
-export default App;
+export default FullApp;

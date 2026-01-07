@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { MethodType, ContextType, FormData } from '../types';
 import { Select, Textarea } from './Input';
 import { Button } from './Button';
-import { METHOD_DESCRIPTIONS } from '../constants';
+import { METHOD_DESCRIPTIONS } from '../utils/constants';
 import { ArrowRight, BrainCircuit } from 'lucide-react';
 
 interface OracleFormProps {

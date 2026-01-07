@@ -1,6 +1,6 @@
 import React, { useMemo, useState, useEffect } from 'react';
 import { FormData, QuestionTemplate } from '../types';
-import { ORACLE_BANK } from '../constants';
+import { ORACLE_BANK } from '../utils/constants';
 import { Button } from './Button';
 import { Mail, RefreshCw, Copy, BrainCircuit, Loader2, AlertTriangle } from 'lucide-react';
 import { GoogleGenAI, Type, Schema } from "@google/genai";

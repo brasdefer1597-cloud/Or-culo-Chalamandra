@@ -1,0 +1,19 @@
+body {
+    background-color: #0B0B0E;
+    color: #F5F5F5;
+  }
+
+  /* Custom Scrollbar for that Elite feel */
+  ::-webkit-scrollbar {
+    width: 8px;
+  }
+  ::-webkit-scrollbar-track {
+    background: #0B0B0E;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: #333;
+    border-radius: 4px;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: #D5006C;
+  }
