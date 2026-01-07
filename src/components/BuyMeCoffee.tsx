@@ -8,10 +8,10 @@ export const BuyMeCoffee: React.FC = () => {
       href={BUY_ME_COFFEE_URL}
       target="_blank"
       rel="noopener noreferrer"
-      className="inline-flex items-center gap-2 px-4 py-2 mt-4 bg-[#FFDD00] text-black font-bold rounded-lg hover:bg-[#FFEA00] transition-colors shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 duration-200"
+      className="inline-flex items-center gap-2 px-6 py-3 mt-4 bg-chala-gold text-chala-black font-black text-lg rounded-lg hover:bg-opacity-90 transition-colors shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 duration-200"
     >
-      <Coffee size={20} className="stroke-2" />
-      <span>Invítame un café</span>
+      <Coffee size={24} className="stroke-3" />
+      <span>DESBLOQUEAR ORÁCULO</span>
     </a>
   );
 };
