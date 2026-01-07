@@ -1,0 +1,21 @@
+{
+  "rewrites": [
+    {
+      "source": "/prueba",
+      "destination": "/demo.html"
+    },
+    {
+      "source": "/magistral",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/gracias",
+      "destination": "/thanks.html"
+    },
+    {
+      "source": "/(.*)",
+      "destination": "/$1"
+    }
+  ],
+  "cleanUrls": true
+}
