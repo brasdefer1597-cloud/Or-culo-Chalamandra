@@ -1,11 +1,7 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
-import FullApp from './FullApp';
+import ThanksApp from './ThanksApp';
 import './assets/styles/index.css';
-import { validarAccesoMagistral } from './utils/gatekeeper';
-
-// Se ejecuta antes de renderizar cualquier componente de la FullApp
-validarAccesoMagistral();
 
 const rootElement = document.getElementById('root');
 if (!rootElement) {
@@ -15,6 +11,6 @@ if (!rootElement) {
 const root = ReactDOM.createRoot(rootElement);
 root.render(
   <React.StrictMode>
-    <FullApp />
+    <ThanksApp />
   </React.StrictMode>
 );

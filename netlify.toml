@@ -17,3 +17,9 @@
   from = "/magistral"
   to = "/index.html"
   status = 200
+
+[[redirects]]
+  # Retorno tras pago
+  from = "/gracias"
+  to = "/thanks.html"
+  status = 200

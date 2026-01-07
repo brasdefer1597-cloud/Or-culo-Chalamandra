@@ -7,17 +7,24 @@ import { ArrowRight, BrainCircuit } from 'lucide-react';
 
 interface OracleFormProps {
   onSubmit: (data: FormData) => void;
+  isDemo?: boolean;
 }
 
-export const OracleForm: React.FC<OracleFormProps> = ({ onSubmit }) => {
+export const OracleForm: React.FC<OracleFormProps> = ({ onSubmit, isDemo = false }) => {
   const [method, setMethod] = useState<MethodType>(MethodType.SIX_HATS);
   const [context, setContext] = useState<ContextType>(ContextType.WORK);
   const [situation, setSituation] = useState('');
-  const [useAI, setUseAI] = useState(false);
+  const [useAI, setUseAI] = useState(!isDemo); // Auto-enable AI in Full App, disable in Demo logic
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    onSubmit({ method, context, situation, useAI });
+    // Force AI on for full app if it wasn't toggled (though we hide toggle in demo,
+    // in full app we might want it always on or user choice.
+    // Plan said "Unlock Deep Mode", implies AI is key.
+    // Let's keep user choice in Full App but default true?
+    // Actually, user said "Demo = Limited", "Full = Deep Mode".
+    // Let's assume 'useAI' is effectively 'Deep Mode' toggle.
+    onSubmit({ method, context, situation, useAI: isDemo ? false : useAI });
   };
 
   return (
@@ -58,26 +65,28 @@ export const OracleForm: React.FC<OracleFormProps> = ({ onSubmit }) => {
           required={false} 
         />
         
-        {/* AI Toggle Switch */}
-        <div className="mb-8 flex items-center justify-between bg-black/30 p-4 rounded-lg border border-gray-800 hover:border-chala-magenta/50 transition-colors cursor-pointer" onClick={() => setUseAI(!useAI)}>
-          <div className="flex items-center gap-3">
-            <div className={`p-2 rounded-full ${useAI ? 'bg-chala-magenta text-white' : 'bg-gray-800 text-gray-500'} transition-colors`}>
-              <BrainCircuit className="w-6 h-6" />
+        {/* AI Toggle Switch - Only visible in Full App */}
+        {!isDemo && (
+          <div className="mb-8 flex items-center justify-between bg-black/30 p-4 rounded-lg border border-gray-800 hover:border-chala-magenta/50 transition-colors cursor-pointer" onClick={() => setUseAI(!useAI)}>
+            <div className="flex items-center gap-3">
+              <div className={`p-2 rounded-full ${useAI ? 'bg-chala-magenta text-white' : 'bg-gray-800 text-gray-500'} transition-colors`}>
+                <BrainCircuit className="w-6 h-6" />
+              </div>
+              <div>
+                <div className="font-bold text-white flex items-center gap-2">
+                  Modo Profundo (AI)
+                  <span className="text-[10px] bg-chala-magenta px-2 py-0.5 rounded-full">PRO</span>
+                </div>
+                <div className="text-xs text-gray-400">
+                  Análisis avanzado con Gemini 3.0 Pro (Thinking Mode)
+                </div>
+              </div>
             </div>
-            <div>
-              <div className="font-bold text-white flex items-center gap-2">
-                Modo Profundo (AI)
-                {useAI && <span className="text-[10px] bg-chala-magenta px-2 py-0.5 rounded-full">BETA</span>}
-              </div>
-              <div className="text-xs text-gray-400">
-                Análisis avanzado con Gemini 3.0 Pro (Thinking Mode)
-              </div>
+            <div className={`w-12 h-6 rounded-full p-1 transition-colors duration-300 ${useAI ? 'bg-chala-magenta' : 'bg-gray-700'}`}>
+              <div className={`w-4 h-4 rounded-full bg-white shadow-md transform transition-transform duration-300 ${useAI ? 'translate-x-6' : 'translate-x-0'}`} />
             </div>
           </div>
-          <div className={`w-12 h-6 rounded-full p-1 transition-colors duration-300 ${useAI ? 'bg-chala-magenta' : 'bg-gray-700'}`}>
-            <div className={`w-4 h-4 rounded-full bg-white shadow-md transform transition-transform duration-300 ${useAI ? 'translate-x-6' : 'translate-x-0'}`} />
-          </div>
-        </div>
+        )}
 
         <div className="text-xs text-gray-500 mb-6 italic -mt-4">
           * Si lo dejas vacío, usaremos el contexto genérico.
