@@ -6,7 +6,6 @@ import { Mail, RefreshCw, Copy, BrainCircuit, AlertTriangle, Download } from 'lu
 import { GoogleGenAI, Type, Schema } from "@google/genai";
 import LoadingSalamandra from './LoadingSalamandra';
 import HistoryPanel from './HistoryPanel';
-import WelcomeModal from './WelcomeModal';
 import { saveInvocation, getHistory, HistoryEntry } from '../utils/history';
 import { descargarDossierMagistral } from '../utils/exporter';
 
@@ -185,8 +184,6 @@ export const OracleResult: React.FC<OracleResultProps> = ({ data, onReset }) => 
 
   return (
     <div className="animate-slide-up w-full max-w-3xl mx-auto relative">
-      <WelcomeModal />
-
       <div className="mb-8 text-center">
          <div className="flex items-center justify-center gap-2 mb-4">
             <div className={`inline-flex items-center gap-2 px-3 py-1 border rounded-full text-xs font-bold uppercase tracking-widest border-chala-gold text-chala-gold bg-chala-gold/10`}>

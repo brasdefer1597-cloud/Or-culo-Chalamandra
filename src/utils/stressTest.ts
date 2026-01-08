@@ -17,7 +17,7 @@ export const runStressTest = async () => {
         { name: "5 Porqués (Crítico)", method: MethodType.FIVE_WHYS, context: ContextType.LOVE, situation: "Mi pareja dice que soy emocionalmente distante." }
     ];
 
-    const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY || (import.meta.env.VITE_GEMINI_API_KEY as string) });
+    const ai = new GoogleGenAI({ apiKey: process.env.API_KEY || (import.meta.env.VITE_GEMINI_API_KEY as string) });
 
     let totalErrors = 0;
     let toneFailures = 0;
