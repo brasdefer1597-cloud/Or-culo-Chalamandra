@@ -1,0 +1,25 @@
+[build]
+  command = "npm run build"
+  publish = "dist"
+
+[dev]
+  command = "npm run dev"
+  port = 3000
+
+[[redirects]]
+  # El gancho es la landing por defecto para nuevos usuarios si así lo decides
+  from = "/prueba"
+  to = "/demo.html"
+  status = 200
+
+[[redirects]]
+  # La experiencia completa
+  from = "/magistral"
+  to = "/index.html"
+  status = 200
+
+[[redirects]]
+  # Retorno tras pago
+  from = "/gracias"
+  to = "/thanks.html"
+  status = 200
