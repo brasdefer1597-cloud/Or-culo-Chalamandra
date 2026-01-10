@@ -4,10 +4,9 @@ import { Footer } from './components/Footer';
 import { OracleForm } from './components/OracleForm';
 import { OracleResult } from './components/OracleResult';
 import { FormData } from './types';
-import { APP_TAGLINE } from './utils/constants';
-import WelcomeModal from './components/WelcomeModal';
+import { APP_TAGLINE } from './constants';
 
-const FullApp: React.FC = () => {
+const App: React.FC = () => {
   const [formData, setFormData] = useState<FormData | null>(null);
 
   const handleSubmit = (data: FormData) => {
@@ -23,7 +22,6 @@ const FullApp: React.FC = () => {
 
   return (
     <div className="min-h-screen flex flex-col font-sans selection:bg-chala-magenta selection:text-white">
-      <WelcomeModal />
       <Header />
       
       <main className="flex-grow px-4 py-8 md:py-12 relative">
@@ -53,4 +51,4 @@ const FullApp: React.FC = () => {
   );
 };
 
-export default FullApp;
+export default App;
