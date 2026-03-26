@@ -29,6 +29,16 @@ const App: React.FC = () => {
           {!formData ? (
             <div className="space-y-8">
               <div className="text-center space-y-4 mb-12 animate-fade-in">
+                <div className="flex justify-center mb-6">
+                  <div className="relative">
+                    <div className="absolute inset-0 rounded-full bg-chala-magenta/20 blur-2xl scale-110"></div>
+                    <img
+                      src="/chalamandra.png"
+                      alt="Oráculo Chalamandra - Pensamiento Crítico"
+                      className="relative w-48 h-48 md:w-60 md:h-60 object-contain drop-shadow-[0_0_24px_rgba(213,0,108,0.35)]"
+                    />
+                  </div>
+                </div>
                 <h2 className="text-4xl md:text-5xl font-black text-white leading-tight">
                   <span className="block text-chala-green">ORDEN EN EL CAOS.</span>
                   <span className="block">ESTRATEGIA EN LA CALLE.</span>
