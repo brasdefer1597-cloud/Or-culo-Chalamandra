@@ -62,6 +62,23 @@
       ::-webkit-scrollbar-thumb:hover {
         background: #D5006C; 
       }
+      /* Shimmer — barra de progreso AI (keyframe faltante corregido) */
+      @keyframes shimmer {
+        0%   { transform: translateX(-100%); }
+        100% { transform: translateX(100%); }
+      }
+      .shimmer-bar {
+        position: relative;
+        overflow: hidden;
+        width: 100%;
+      }
+      .shimmer-bar::after {
+        content: '';
+        position: absolute;
+        inset: 0;
+        background: linear-gradient(90deg, transparent, rgba(255,255,255,0.25), transparent);
+        animation: shimmer 1.5s infinite;
+      }
     </style>
 </head>
   <body>

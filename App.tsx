@@ -35,6 +35,7 @@ const App: React.FC = () => {
                     <img
                       src="/brand-street-wisdom.png"
                       alt="Chalamandra - Street Wisdom"
+                      loading="eager"
                       className="relative w-40 h-40 md:w-56 md:h-56 object-contain drop-shadow-[0_0_20px_rgba(0,142,74,0.4)]"
                     />
                   </div>

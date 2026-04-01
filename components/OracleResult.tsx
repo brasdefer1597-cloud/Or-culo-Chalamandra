@@ -1,224 +1,255 @@
-import React, { useMemo, useState, useEffect } from 'react';
+/**
+ * OracleResult — Vista de resultados del Oráculo.
+ *
+ * Responsabilidades:
+ *  1. Resolver las preguntas del banco estático (modo clásico)
+ *  2. Delegar la llamada AI al hook useOracleAI (modo profundo)
+ *  3. Renderizar cards, loading state, error state y acciones de exportación
+ *
+ * Analogía: este componente es el "tablero de operaciones" —
+ * el hook AI es el agente que consigue la inteligencia;
+ * el componente solo la presenta.
+ */
+
+import React, { useMemo, useState, useCallback } from 'react';
 import { FormData, QuestionTemplate } from '../types';
-import { ORACLE_BANK, METHOD_IMAGES } from '../constants';
+import { ORACLE_BANK, METHOD_IMAGES, oracleKey } from '../constants';
+import { useOracleAI } from '../hooks/useOracleAI';
 import { Button } from './Button';
-import { Mail, RefreshCw, Copy, BrainCircuit, Loader2, AlertTriangle } from 'lucide-react';
-import { GoogleGenAI, Type, Schema } from "@google/genai";
+import { Mail, RefreshCw, Copy, Check, BrainCircuit, Loader2, AlertTriangle } from 'lucide-react';
 
 interface OracleResultProps {
-  data: FormData;
+  data:    FormData;
   onReset: () => void;
 }
 
+// ─── Helper: extrae solo la clase de borde de una string de color ─────────────
+// Ejemplo: "border-gray-200 text-gray-200" → "border-gray-200"
+//          "border-chala-magenta"          → "border-chala-magenta"
+const parseBorderClass = (color?: string): string => {
+  if (!color) return 'border-chala-green';
+  return color.split(' ').find(c => c.startsWith('border-')) ?? 'border-chala-green';
+};
+
+// ─── Helper: convierte clase de borde a su equivalente de texto ───────────────
+// Ejemplo: "border-red-500" → "text-red-500"
+const parseTextClass = (color?: string): string => {
+  const borderClass = parseBorderClass(color);
+  return borderClass.replace('border-', 'text-');
+};
+
+// ─── Subcomponente: card individual de pregunta ───────────────────────────────
+const QuestionCard: React.FC<{ question: QuestionTemplate; index: number }> = ({ question, index }) => {
+  const borderClass = parseBorderClass(question.color);
+  const textClass   = parseTextClass(question.color);
+
+  return (
+    <div
+      className={`bg-chala-darkgray p-6 rounded-lg border-l-4 shadow-lg hover:bg-black transition-colors duration-300 ${borderClass}`}
+      style={{ animationDelay: `${index * 60}ms` }}
+    >
+      <h3 className={`text-sm font-bold uppercase tracking-wider mb-2 opacity-80 ${textClass}`}>
+        {question.heading}
+      </h3>
+      <p className="text-lg md:text-xl font-medium leading-relaxed text-gray-100 whitespace-pre-wrap">
+        {question.text ?? question.template}
+      </p>
+    </div>
+  );
+};
+
+// ─── Subcomponente: pantalla de carga AI ──────────────────────────────────────
+const LoadingScreen: React.FC<{ elapsed: number }> = ({ elapsed }) => (
+  <div className="flex flex-col items-center justify-center py-20 animate-fade-in space-y-6">
+    <div className="relative">
+      <div className="absolute inset-0 bg-chala-magenta/20 blur-xl rounded-full animate-pulse-slow" />
+      <Loader2 className="w-16 h-16 text-chala-magenta animate-spin relative z-10" />
+    </div>
+    <div className="text-center space-y-2">
+      <h3 className="text-2xl font-black text-white uppercase tracking-widest">
+        Gemini 2.0 Flash
+      </h3>
+      <p className="text-chala-green font-mono text-sm">Análisis AI Profundo en curso...</p>
+      <p className="text-gray-500 text-xs">Tiempo de cómputo: {elapsed.toFixed(1)}s</p>
+    </div>
+    {/* Barra de progreso — shimmer definido en index.html */}
+    <div className="w-64 h-1 bg-gray-800 rounded-full overflow-hidden">
+      <div className="h-full bg-gradient-to-r from-chala-magenta to-chala-gold shimmer-bar" />
+    </div>
+  </div>
+);
+
+// ─── Subcomponente: pantalla de error ─────────────────────────────────────────
+const ErrorScreen: React.FC<{ message: string; onRetry: () => void; onReset: () => void }> = ({
+  message, onRetry, onReset
+}) => (
+  <div className="text-center py-12 space-y-4">
+    <AlertTriangle className="w-12 h-12 text-red-500 mx-auto" />
+    <p className="text-white">{message}</p>
+    <div className="flex gap-3 justify-center">
+      <Button onClick={onRetry} variant="primary">Reintentar</Button>
+      <Button onClick={onReset} variant="outline">Volver al Inicio</Button>
+    </div>
+  </div>
+);
+
+// ─── Componente principal ──────────────────────────────────────────────────────
 export const OracleResult: React.FC<OracleResultProps> = ({ data, onReset }) => {
   const { method, context, situation, useAI } = data;
+
+  // Situación activa: texto del usuario o fallback al nombre del personaje
   const activeSituation = situation.trim() || context;
 
-  const [aiQuestions, setAiQuestions] = useState<QuestionTemplate[] | null>(null);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [thinkingTime, setThinkingTime] = useState(0);
+  // Estado de feedback para la acción "Copiar"
+  // Reemplaza alert() — no bloquea el hilo, da feedback visual
+  const [copied, setCopied] = useState(false);
 
-  // Timer for thinking effect
-  useEffect(() => {
-    let interval: any;
-    if (loading) {
-      interval = setInterval(() => {
-        setThinkingTime(t => t + 0.1);
-      }, 100);
-    } else {
-      setThinkingTime(0);
-    }
-    return () => clearInterval(interval);
-  }, [loading]);
+  // Hook AI — encapsula toda la lógica de Gemini
+  const {
+    questions: aiQuestions,
+    loading,
+    error,
+    elapsedTime,
+    retry,
+  } = useOracleAI({
+    method,
+    context,
+    situation: activeSituation,
+    enabled: useAI,
+  });
 
-  useEffect(() => {
-    if (useAI && !aiQuestions) {
-      generateAIResponse();
-    }
-  }, [useAI, method, context, activeSituation]);
-
-  const generateAIResponse = async () => {
-    setLoading(true);
-    setError(null);
-
-    try {
-      const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
-      
-      const schema: Schema = {
-        type: Type.ARRAY,
-        items: {
-          type: Type.OBJECT,
-          properties: {
-            heading: { type: Type.STRING },
-            text: { type: Type.STRING },
-            color: { type: Type.STRING, description: "Tailwind border color class (e.g. border-red-500, border-blue-400)" }
-          },
-          required: ["heading", "text"]
-        }
-      };
-
-      const prompt = `
-        Act as 'Oráculo Chalamandra', a strategic advisor.
-        Apply the '${method}' methodology to this situation: "${activeSituation}". 
-        Context: ${context}.
-        
-        Tone: Strategic, street-smart ('Chola-Malandra-Fresa'), direct, and insightful.
-        
-        Provide a deep analysis broken down into the steps of the chosen methodology.
-        For each step, provide:
-        - heading: The step name (e.g., 'White Hat', 'Why #1').
-        - text: The insight, question, or analysis.
-        - color: A tailwind border color class reflecting the sentiment.
-      `;
-
-      const response = await ai.models.generateContent({
-        model: 'gemini-2.0-flash',
-        contents: prompt,
-        config: {
-          responseMimeType: 'application/json',
-          responseSchema: schema
-        }
-      });
-
-      const jsonText = response.text;
-      if (jsonText) {
-        const parsed = JSON.parse(jsonText);
-        // Map to QuestionTemplate format (using text as template)
-        const mapped: QuestionTemplate[] = parsed.map((item: any) => ({
-          heading: item.heading,
-          template: item.text, // store in template for consistency
-          text: item.text,
-          color: item.color || 'border-chala-magenta'
-        }));
-        setAiQuestions(mapped);
-      } else {
-        throw new Error("No response generated");
-      }
-
-    } catch (err) {
-      console.error(err);
-      setError("La conexión con el Oráculo AI falló. Intenta de nuevo o usa el modo clásico.");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const questions = useMemo(() => {
+  // Resolver preguntas: AI si está disponible, banco estático como fallback
+  const questions = useMemo((): QuestionTemplate[] => {
     if (useAI && aiQuestions) return aiQuestions;
-    
-    // Try persona-specific key first, then fall back to generic method key
-    const compositeKey = `${method}_${context}`;
-    const templates = ORACLE_BANK[compositeKey] || ORACLE_BANK[method] || [];
+
+    // Lookup compuesto (método + personaje) con fallback a solo método
+    const key       = oracleKey(method, context);
+    const templates = ORACLE_BANK[key] ?? ORACLE_BANK[method] ?? [];
+
     return templates.map(t => ({
       ...t,
-      text: t.template.replace(/\[situacion\]/g, activeSituation)
+      text: t.template.replace(/\[situacion\]/g, activeSituation),
     }));
   }, [method, context, activeSituation, useAI, aiQuestions]);
 
-  const handleEmail = () => {
-    const subject = encodeURIComponent(`Mis Resultados Chalamandra: ${method}`);
-    const bodyContent = questions.map(q => `[${q.heading}]\n${q.text || q.template}`).join('\n\n');
-    const body = encodeURIComponent(`Hola,\n\nAquí están mis preguntas de poder para desbloquear: "${activeSituation}"\n\nMétodo: ${method}\n\n${bodyContent}\n\n---\nGenerado por Oráculo Chalamandra.`);
+  // ─── Exportar por email ──────────────────────────────────────────────────────
+  const handleEmail = useCallback(() => {
+    const subject     = encodeURIComponent(`Mis Resultados Chalamandra: ${method}`);
+    const body        = encodeURIComponent(
+      `Oráculo Chalamandra — Diagnóstico\n\n` +
+      `Método: ${method} | Personaje: ${context}\n` +
+      `Situación: "${activeSituation}"\n\n` +
+      questions.map(q => `[${q.heading}]\n${q.text ?? q.template}`).join('\n\n') +
+      `\n\n---\nGenerado por Oráculo Chalamandra.`
+    );
     window.location.href = `mailto:?subject=${subject}&body=${body}`;
-  };
+  }, [method, context, activeSituation, questions]);
 
-  const handleCopy = () => {
-     const bodyContent = questions.map(q => `${q.heading}: ${q.text || q.template}`).join('\n\n');
-     navigator.clipboard.writeText(bodyContent);
-     alert("Copiado al portapapeles, maestro.");
-  };
+  // ─── Copiar al portapapeles con feedback visual ───────────────────────────────
+  const handleCopy = useCallback(async () => {
+    const text = questions
+      .map(q => `${q.heading}:\n${q.text ?? q.template}`)
+      .join('\n\n');
+    try {
+      await navigator.clipboard.writeText(text);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch {
+      // Fallback para entornos sin permisos de clipboard
+      const ta = document.createElement('textarea');
+      ta.value = text;
+      document.body.appendChild(ta);
+      ta.select();
+      document.execCommand('copy');
+      document.body.removeChild(ta);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    }
+  }, [questions]);
 
-  if (loading) {
-    return (
-      <div className="flex flex-col items-center justify-center py-20 animate-fade-in space-y-6">
-        <div className="relative">
-          <div className="absolute inset-0 bg-chala-magenta/20 blur-xl rounded-full animate-pulse-slow"></div>
-          <Loader2 className="w-16 h-16 text-chala-magenta animate-spin relative z-10" />
-        </div>
-        <div className="text-center space-y-2">
-          <h3 className="text-2xl font-black text-white uppercase tracking-widest">
-            Gemini 2.0 Flash
-          </h3>
-          <p className="text-chala-green font-mono text-sm">
-            Análisis AI Profundo en curso...
-          </p>
-          <p className="text-gray-500 text-xs">
-            Tiempo de cómputo: {thinkingTime.toFixed(1)}s
-          </p>
-        </div>
-        <div className="w-64 h-1 bg-gray-800 rounded-full overflow-hidden">
-          <div className="h-full bg-gradient-to-r from-chala-magenta to-chala-gold animate-progress" style={{ width: '100%', animation: 'shimmer 2s infinite linear' }}></div>
-        </div>
-      </div>
-    );
-  }
+  // ─── Guards de estado ─────────────────────────────────────────────────────────
+  if (loading) return <LoadingScreen elapsed={elapsedTime} />;
+  if (error)   return <ErrorScreen message={error} onRetry={retry} onReset={onReset} />;
 
-  if (error) {
-    return (
-      <div className="text-center py-12">
-        <AlertTriangle className="w-12 h-12 text-red-500 mx-auto mb-4" />
-        <p className="text-white mb-4">{error}</p>
-        <Button onClick={onReset} variant="outline">Volver al Inicio</Button>
-      </div>
-    );
-  }
+  const methodImage = METHOD_IMAGES[method];
 
   return (
     <div className="animate-slide-up w-full max-w-3xl mx-auto">
+
+      {/* Cabecera del diagnóstico */}
       <div className="mb-8 text-center">
-         <div className="flex items-center justify-center gap-2 mb-4">
-            <div className={`inline-flex items-center gap-2 px-3 py-1 border rounded-full text-xs font-bold uppercase tracking-widest ${useAI ? 'border-chala-magenta text-white bg-chala-magenta/20' : 'border-gray-500 text-gray-500'}`}>
-                {useAI && <BrainCircuit className="w-3 h-3" />}
-                {useAI ? 'Análisis AI Profundo' : 'Modo Clásico'}
+        <div className="flex items-center justify-center gap-2 mb-4">
+          <div className={`inline-flex items-center gap-2 px-3 py-1 border rounded-full text-xs font-bold uppercase tracking-widest ${
+            useAI
+              ? 'border-chala-magenta text-white bg-chala-magenta/20'
+              : 'border-gray-500 text-gray-500'
+          }`}>
+            {useAI && <BrainCircuit className="w-3 h-3" />}
+            {useAI ? 'Análisis AI Profundo' : 'Modo Clásico'}
+          </div>
+        </div>
+
+        {/* Imagen ilustrativa del método (si existe) */}
+        {methodImage && (
+          <div className="flex justify-center mb-4">
+            <div className="relative">
+              <div className="absolute inset-0 bg-chala-magenta/15 blur-2xl rounded-full scale-110" />
+              <img
+                src={methodImage}
+                alt={`Ilustración: ${method}`}
+                loading="lazy"
+                className="relative w-32 h-32 md:w-44 md:h-44 object-contain drop-shadow-[0_0_18px_rgba(213,0,108,0.3)]"
+              />
             </div>
-         </div>
-         {METHOD_IMAGES[method] && (
-           <div className="flex justify-center mb-4">
-             <div className="relative">
-               <div className="absolute inset-0 bg-chala-magenta/15 blur-2xl rounded-full scale-110"></div>
-               <img
-                 src={METHOD_IMAGES[method]}
-                 alt={`Ilustración: ${method}`}
-                 className="relative w-32 h-32 md:w-44 md:h-44 object-contain drop-shadow-[0_0_18px_rgba(213,0,108,0.3)]"
-               />
-             </div>
-           </div>
-         )}
-         <h2 className="text-3xl font-black text-white mb-1">Diagnóstico: {method}</h2>
-         <p className="text-chala-gold text-sm font-bold uppercase tracking-widest mb-2">{context}</p>
-         <p className="text-gray-400 italic">"{activeSituation}"</p>
+          </div>
+        )}
+
+        <h2 className="text-3xl font-black text-white mb-1">Diagnóstico: {method}</h2>
+        <p className="text-chala-gold text-sm font-bold uppercase tracking-widest mb-2">{context}</p>
+        <p className="text-gray-400 italic">"{activeSituation}"</p>
       </div>
 
+      {/* Cards de preguntas */}
       <div className="grid gap-4 mb-8">
         {questions.map((q, idx) => (
-          <div 
-            key={idx} 
-            className={`bg-chala-darkgray p-6 rounded-lg border-l-4 shadow-lg hover:bg-black transition-colors duration-300 ${q.color || 'border-chala-green'}`}
-          >
-            <h3 className={`text-sm font-bold uppercase tracking-wider mb-2 opacity-80 ${q.color?.replace('border', 'text') || 'text-chala-green'}`}>
-              {q.heading}
-            </h3>
-            <p className="text-lg md:text-xl font-medium leading-relaxed text-gray-100 whitespace-pre-wrap">
-              {q.text || q.template}
-            </p>
-          </div>
+          <QuestionCard key={idx} question={q} index={idx} />
         ))}
       </div>
 
+      {/* Ritual sugerido */}
       <div className="bg-black/40 border border-gray-800 p-6 rounded-lg mb-8 text-center">
         <p className="text-chala-gold text-sm font-mono mb-2">⚡ RITUAL SUGERIDO ⚡</p>
-        <p className="text-gray-400">Respira profundo (SRAP). Lee en voz alta. Ejecuta la primera acción en 72 horas.</p>
+        <p className="text-gray-400">
+          Respira profundo (SRAP). Lee en voz alta. Ejecuta la primera acción en 72 horas.
+        </p>
       </div>
 
+      {/* Acciones de exportación */}
       <div className="flex flex-col sm:flex-row gap-4 justify-center">
-        <Button onClick={handleEmail} variant="secondary" className="flex items-center justify-center gap-2">
+        <Button
+          onClick={handleEmail}
+          variant="secondary"
+          className="flex items-center justify-center gap-2"
+        >
           <Mail className="w-4 h-4" /> Guardar en Email
         </Button>
-        <Button onClick={handleCopy} variant="outline" className="flex items-center justify-center gap-2">
-            <Copy className="w-4 h-4" /> Copiar Texto
+
+        <Button
+          onClick={handleCopy}
+          variant="outline"
+          className="flex items-center justify-center gap-2 min-w-[160px]"
+        >
+          {copied
+            ? <><Check className="w-4 h-4 text-chala-green" /> Copiado</>
+            : <><Copy className="w-4 h-4" /> Copiar Texto</>
+          }
         </Button>
-        <Button onClick={onReset} variant="outline" className="flex items-center justify-center gap-2 !border-gray-600 !text-gray-400 hover:!text-white hover:!border-white">
+
+        <Button
+          onClick={onReset}
+          variant="outline"
+          className="flex items-center justify-center gap-2 !border-gray-600 !text-gray-400 hover:!text-white hover:!border-white"
+        >
           <RefreshCw className="w-4 h-4" /> Nueva Consulta
         </Button>
       </div>

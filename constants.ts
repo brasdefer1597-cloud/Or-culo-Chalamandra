@@ -1,7 +1,17 @@
 import { MethodType, ContextType, OracleData } from "./types";
 
-export const APP_NAME = "Oráculo Chalamandra";
+export const APP_NAME    = "Oráculo Chalamandra";
 export const APP_TAGLINE = "Decodifica tu caos en 90 segundos.";
+
+/**
+ * oracleKey — Genera la clave compuesta para el ORACLE_BANK.
+ *
+ * Centralizar la generación de la clave evita que un cambio en el
+ * formato rompa silenciosamente el lookup en múltiples lugares.
+ * Un solo punto de falla = un solo punto de corrección.
+ */
+export const oracleKey = (method: MethodType, context: ContextType): string =>
+  `${method}_${context}`;
 
 export const ORACLE_BANK: OracleData = {
   // ─── MÉTODOS CLÁSICOS ────────────────────────────────────────────────────────
