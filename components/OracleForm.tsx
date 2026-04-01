@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { MethodType, ContextType, FormData } from '../types';
 import { Select, Textarea } from './Input';
 import { Button } from './Button';
-import { METHOD_DESCRIPTIONS } from '../constants';
+import { METHOD_DESCRIPTIONS, PERSONA_DESCRIPTIONS } from '../constants';
 import { ArrowRight, BrainCircuit } from 'lucide-react';
 
 interface OracleFormProps {
@@ -40,12 +40,12 @@ export const OracleForm: React.FC<OracleFormProps> = ({ onSubmit }) => {
         </Select>
 
         <Select 
-          label="2. Elige el Terreno (Contexto)"
+          label="2. Elige tu Vibe (Personaje)"
           value={context}
           onChange={(e) => setContext(e.target.value as ContextType)}
         >
           {Object.values(ContextType).map((val) => (
-            <option key={val} value={val}>{val}</option>
+            <option key={val} value={val}>{val} — {PERSONA_DESCRIPTIONS[val]}</option>
           ))}
         </Select>
 

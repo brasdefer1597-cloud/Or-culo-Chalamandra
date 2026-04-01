@@ -108,13 +108,14 @@ export const OracleResult: React.FC<OracleResultProps> = ({ data, onReset }) => 
   const questions = useMemo(() => {
     if (useAI && aiQuestions) return aiQuestions;
     
-    // Fallback or Classic Mode
-    const templates = ORACLE_BANK[method] || [];
+    // Try persona-specific key first, then fall back to generic method key
+    const compositeKey = `${method}_${context}`;
+    const templates = ORACLE_BANK[compositeKey] || ORACLE_BANK[method] || [];
     return templates.map(t => ({
       ...t,
       text: t.template.replace(/\[situacion\]/g, activeSituation)
     }));
-  }, [method, activeSituation, useAI, aiQuestions]);
+  }, [method, context, activeSituation, useAI, aiQuestions]);
 
   const handleEmail = () => {
     const subject = encodeURIComponent(`Mis Resultados Chalamandra: ${method}`);
@@ -173,7 +174,8 @@ export const OracleResult: React.FC<OracleResultProps> = ({ data, onReset }) => 
                 {useAI ? 'Análisis AI Profundo' : 'Modo Clásico'}
             </div>
          </div>
-         <h2 className="text-3xl font-black text-white mb-2">Diagnóstico: {method}</h2>
+         <h2 className="text-3xl font-black text-white mb-1">Diagnóstico: {method}</h2>
+         <p className="text-chala-gold text-sm font-bold uppercase tracking-widest mb-2">{context}</p>
          <p className="text-gray-400 italic">"{activeSituation}"</p>
       </div>
 

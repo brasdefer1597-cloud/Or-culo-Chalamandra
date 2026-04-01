@@ -3,15 +3,19 @@ export enum MethodType {
   FIVE_WHYS = "5 Porqués",
   DISNEY = "Disney",
   COVEY = "Covey",
-  OODA = "OODA Loop"
+  OODA = "OODA Loop",
+  SCAMPER = "SCAMPER",
+  MIND_MAP = "Mind Mapping",
+  DESIGN_THINKING = "Design Thinking",
+  SWOT = "SWOT / FODA",
+  STORYTELLING = "Storytelling",
+  ROLE_STORMING = "Role Storming"
 }
 
 export enum ContextType {
-  WORK = "Decisión Laboral",
-  LOVE = "Relación de Pareja",
-  PARENTING = "Parentalidad / Crianza",
-  CYBER = "Riesgo Digital / Ciberseguridad",
-  FREELANCE = "Cliente Freelancer"
+  CHOLA = "La Chola",
+  FRESA = "La Fresa",
+  MALANDRA = "La Malandra"
 }
 
 export interface QuestionTemplate {
