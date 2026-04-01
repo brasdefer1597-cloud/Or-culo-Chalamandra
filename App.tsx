@@ -29,13 +29,21 @@ const App: React.FC = () => {
           {!formData ? (
             <div className="space-y-8">
               <div className="text-center space-y-4 mb-12 animate-fade-in">
-                <div className="flex justify-center mb-6">
-                  <div className="relative">
+                <div className="flex justify-center items-end gap-4 md:gap-8 mb-6">
+                  <div className="relative flex-shrink-0">
+                    <div className="absolute inset-0 bg-chala-green/20 blur-2xl scale-110 rounded-full"></div>
+                    <img
+                      src="/brand-street-wisdom.png"
+                      alt="Chalamandra - Street Wisdom"
+                      className="relative w-40 h-40 md:w-56 md:h-56 object-contain drop-shadow-[0_0_20px_rgba(0,142,74,0.4)]"
+                    />
+                  </div>
+                  <div className="relative flex-shrink-0">
                     <div className="absolute inset-0 rounded-full bg-chala-magenta/20 blur-2xl scale-110"></div>
                     <img
                       src="/chalamandra.png"
                       alt="Oráculo Chalamandra - Pensamiento Crítico"
-                      className="relative w-48 h-48 md:w-60 md:h-60 object-contain drop-shadow-[0_0_24px_rgba(213,0,108,0.35)]"
+                      className="relative w-36 h-36 md:w-48 md:h-48 object-contain drop-shadow-[0_0_24px_rgba(213,0,108,0.35)]"
                     />
                   </div>
                 </div>

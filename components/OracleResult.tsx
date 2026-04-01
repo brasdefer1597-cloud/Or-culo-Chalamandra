@@ -1,6 +1,6 @@
 import React, { useMemo, useState, useEffect } from 'react';
 import { FormData, QuestionTemplate } from '../types';
-import { ORACLE_BANK } from '../constants';
+import { ORACLE_BANK, METHOD_IMAGES } from '../constants';
 import { Button } from './Button';
 import { Mail, RefreshCw, Copy, BrainCircuit, Loader2, AlertTriangle } from 'lucide-react';
 import { GoogleGenAI, Type, Schema } from "@google/genai";
@@ -174,6 +174,18 @@ export const OracleResult: React.FC<OracleResultProps> = ({ data, onReset }) => 
                 {useAI ? 'Análisis AI Profundo' : 'Modo Clásico'}
             </div>
          </div>
+         {METHOD_IMAGES[method] && (
+           <div className="flex justify-center mb-4">
+             <div className="relative">
+               <div className="absolute inset-0 bg-chala-magenta/15 blur-2xl rounded-full scale-110"></div>
+               <img
+                 src={METHOD_IMAGES[method]}
+                 alt={`Ilustración: ${method}`}
+                 className="relative w-32 h-32 md:w-44 md:h-44 object-contain drop-shadow-[0_0_18px_rgba(213,0,108,0.3)]"
+               />
+             </div>
+           </div>
+         )}
          <h2 className="text-3xl font-black text-white mb-1">Diagnóstico: {method}</h2>
          <p className="text-chala-gold text-sm font-bold uppercase tracking-widest mb-2">{context}</p>
          <p className="text-gray-400 italic">"{activeSituation}"</p>

@@ -178,6 +178,11 @@ export const METHOD_DESCRIPTIONS: Record<MethodType, string> = {
   [MethodType.ROLE_STORMING]: "Role Storming – Métete en Personajes"
 };
 
+export const METHOD_IMAGES: Partial<Record<MethodType, string>> = {
+  [MethodType.FIVE_WHYS]: '/method-5whys.png',
+  [MethodType.DISNEY]: '/method-disney.png',
+};
+
 export const PERSONA_DESCRIPTIONS: Record<string, string> = {
   [ContextType.CHOLA as string]: "Fuerza callejera, resiliencia y hustle real.",
   [ContextType.FRESA as string]: "Estilo, brillo y elegancia estratégica.",
