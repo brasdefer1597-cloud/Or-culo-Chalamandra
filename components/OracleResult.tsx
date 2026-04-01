@@ -73,10 +73,9 @@ export const OracleResult: React.FC<OracleResultProps> = ({ data, onReset }) => 
       `;
 
       const response = await ai.models.generateContent({
-        model: 'gemini-3-pro-preview',
+        model: 'gemini-2.0-flash',
         contents: prompt,
         config: {
-          thinkingConfig: { thinkingBudget: 32768 },
           responseMimeType: 'application/json',
           responseSchema: schema
         }
@@ -139,10 +138,10 @@ export const OracleResult: React.FC<OracleResultProps> = ({ data, onReset }) => 
         </div>
         <div className="text-center space-y-2">
           <h3 className="text-2xl font-black text-white uppercase tracking-widest">
-            Gemini 3.0 Pro Thinking
+            Gemini 2.0 Flash
           </h3>
           <p className="text-chala-green font-mono text-sm">
-            Presupuesto de Pensamiento: 32k Tokens
+            Análisis AI Profundo en curso...
           </p>
           <p className="text-gray-500 text-xs">
             Tiempo de cómputo: {thinkingTime.toFixed(1)}s

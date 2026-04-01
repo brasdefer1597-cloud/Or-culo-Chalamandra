@@ -70,7 +70,7 @@ export const OracleForm: React.FC<OracleFormProps> = ({ onSubmit }) => {
                 {useAI && <span className="text-[10px] bg-chala-magenta px-2 py-0.5 rounded-full">BETA</span>}
               </div>
               <div className="text-xs text-gray-400">
-                Análisis avanzado con Gemini 3.0 Pro (Thinking Mode)
+                Análisis avanzado con Gemini 2.0 Flash
               </div>
             </div>
           </div>
