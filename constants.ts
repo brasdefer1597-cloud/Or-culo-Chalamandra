@@ -13,6 +13,49 @@ export const APP_TAGLINE = "Decodifica tu caos en 90 segundos.";
 export const oracleKey = (method: MethodType, context: ContextType): string =>
   `${method}_${context}`;
 
+// ─── COLOR TOKEN MAP ──────────────────────────────────────────────────────────
+// Mapa centralizado: clase de borde → { borderClass, textClass }
+// FIX: reemplaza parseBorderClass/parseTextClass (string splitting frágil).
+// Agregar aquí cualquier nuevo token para que toda la UI quede sincronizada.
+export const DEFAULT_BORDER_CLASS = 'border-chala-green';
+export const DEFAULT_TEXT_CLASS   = 'text-chala-green';
+
+export const COLOR_TOKEN_MAP: Record<string, { borderClass: string; textClass: string }> = {
+  'border-gray-200':     { borderClass: 'border-gray-200',     textClass: 'text-gray-200' },
+  'border-gray-400':     { borderClass: 'border-gray-400',     textClass: 'text-gray-400' },
+  'border-gray-500':     { borderClass: 'border-gray-500',     textClass: 'text-gray-500' },
+  'border-gray-600':     { borderClass: 'border-gray-600',     textClass: 'text-gray-600' },
+  'border-red-400':      { borderClass: 'border-red-400',      textClass: 'text-red-400' },
+  'border-red-500':      { borderClass: 'border-red-500',      textClass: 'text-red-500' },
+  'border-yellow-400':   { borderClass: 'border-yellow-400',   textClass: 'text-yellow-400' },
+  'border-yellow-500':   { borderClass: 'border-yellow-500',   textClass: 'text-yellow-500' },
+  'border-green-400':    { borderClass: 'border-green-400',    textClass: 'text-green-400' },
+  'border-green-500':    { borderClass: 'border-green-500',    textClass: 'text-green-500' },
+  'border-green-600':    { borderClass: 'border-green-600',    textClass: 'text-green-600' },
+  'border-emerald-400':  { borderClass: 'border-emerald-400',  textClass: 'text-emerald-400' },
+  'border-emerald-500':  { borderClass: 'border-emerald-500',  textClass: 'text-emerald-500' },
+  'border-teal-400':     { borderClass: 'border-teal-400',     textClass: 'text-teal-400' },
+  'border-teal-500':     { borderClass: 'border-teal-500',     textClass: 'text-teal-500' },
+  'border-blue-300':     { borderClass: 'border-blue-300',     textClass: 'text-blue-300' },
+  'border-blue-400':     { borderClass: 'border-blue-400',     textClass: 'text-blue-400' },
+  'border-blue-500':     { borderClass: 'border-blue-500',     textClass: 'text-blue-500' },
+  'border-purple-400':   { borderClass: 'border-purple-400',   textClass: 'text-purple-400' },
+  'border-purple-500':   { borderClass: 'border-purple-500',   textClass: 'text-purple-500' },
+  'border-purple-600':   { borderClass: 'border-purple-600',   textClass: 'text-purple-600' },
+  'border-violet-400':   { borderClass: 'border-violet-400',   textClass: 'text-violet-400' },
+  'border-violet-500':   { borderClass: 'border-violet-500',   textClass: 'text-violet-500' },
+  'border-pink-300':     { borderClass: 'border-pink-300',     textClass: 'text-pink-300' },
+  'border-pink-400':     { borderClass: 'border-pink-400',     textClass: 'text-pink-400' },
+  'border-pink-500':     { borderClass: 'border-pink-500',     textClass: 'text-pink-500' },
+  'border-rose-300':     { borderClass: 'border-rose-300',     textClass: 'text-rose-300' },
+  'border-rose-400':     { borderClass: 'border-rose-400',     textClass: 'text-rose-400' },
+  'border-rose-500':     { borderClass: 'border-rose-500',     textClass: 'text-rose-500' },
+  'border-fuchsia-400':  { borderClass: 'border-fuchsia-400',  textClass: 'text-fuchsia-400' },
+  'border-chala-magenta':{ borderClass: 'border-chala-magenta',textClass: 'text-chala-magenta' },
+  'border-chala-green':  { borderClass: 'border-chala-green',  textClass: 'text-chala-green' },
+  'border-chala-gold':   { borderClass: 'border-chala-gold',   textClass: 'text-chala-gold' },
+};
+
 export const ORACLE_BANK: OracleData = {
   // ─── MÉTODOS CLÁSICOS ────────────────────────────────────────────────────────
   [MethodType.SIX_HATS]: [
@@ -174,6 +217,7 @@ export const ORACLE_BANK: OracleData = {
   ]
 };
 
+// ─── METHOD DESCRIPTIONS ──────────────────────────────────────────────────────
 export const METHOD_DESCRIPTIONS: Record<MethodType, string> = {
   [MethodType.SIX_HATS]: "6 Sombreros – Perspectiva Total",
   [MethodType.FIVE_WHYS]: "5 Porqués – Raíz del Problema",
@@ -188,9 +232,11 @@ export const METHOD_DESCRIPTIONS: Record<MethodType, string> = {
   [MethodType.ROLE_STORMING]: "Role Storming – Métete en Personajes"
 };
 
+// ─── METHOD IMAGES (WebP) ────────────────────────────────────────────────────
+// FIX: convertido a WebP para mejor LCP. Los PNG originales se mantienen como fallback.
 export const METHOD_IMAGES: Partial<Record<MethodType, string>> = {
-  [MethodType.FIVE_WHYS]: '/method-5whys.png',
-  [MethodType.DISNEY]: '/method-disney.png',
+  [MethodType.FIVE_WHYS]: '/method-5whys.webp',
+  [MethodType.DISNEY]: '/method-disney.webp',
 };
 
 export const PERSONA_DESCRIPTIONS: Record<string, string> = {
@@ -198,3 +244,68 @@ export const PERSONA_DESCRIPTIONS: Record<string, string> = {
   [ContextType.FRESA as string]: "Estilo, brillo y elegancia estratégica.",
   [ContextType.MALANDRA as string]: "Táctica disruptiva, control y dominio del game."
 };
+
+// ─── DEV-TIME ORACLE BANK COMPLETENESS CHECK ─────────────────────────────────
+// FIX: emite warning en consola si alguna clave esperada falta en ORACLE_BANK.
+//
+// Cubre DOS categorías:
+//  1. Métodos "base" (sin personaje): SIX_HATS, FIVE_WHYS, DISNEY, COVEY, OODA
+//     — deben tener una entrada directa con la clave `method`.
+//  2. Métodos "compuestos" (con personaje): SCAMPER, MIND_MAP, DESIGN_THINKING, etc.
+//     — deben tener una entrada por cada combinación método+personaje.
+//
+// Si se agrega un nuevo MethodType o ContextType al enum, este check lo detectará
+// automáticamente en la próxima sesión de desarrollo.
+
+const BASE_METHODS: MethodType[] = [
+  MethodType.SIX_HATS,
+  MethodType.FIVE_WHYS,
+  MethodType.DISNEY,
+  MethodType.COVEY,
+  MethodType.OODA,
+];
+
+const CONTEXT_DEPENDENT_METHODS: MethodType[] = [
+  MethodType.SCAMPER,
+  MethodType.MIND_MAP,
+  MethodType.DESIGN_THINKING,
+  MethodType.SWOT,
+  MethodType.STORYTELLING,
+  MethodType.ROLE_STORMING,
+];
+
+if (import.meta.env.DEV) {
+  // Check base methods — must have a top-level entry
+  for (const method of BASE_METHODS) {
+    if (!ORACLE_BANK[method]) {
+      console.warn(
+        `[ORACLE_BANK] Missing base entry for method "${method}". ` +
+        `Add it to ORACLE_BANK in constants.ts.`
+      );
+    }
+  }
+
+  // Check context-dependent methods — must have all method+context combinations
+  for (const method of CONTEXT_DEPENDENT_METHODS) {
+    for (const ctx of Object.values(ContextType)) {
+      const key = oracleKey(method, ctx);
+      if (!ORACLE_BANK[key]) {
+        console.warn(
+          `[ORACLE_BANK] Missing entry for key "${key}". ` +
+          `Add "${method}_${ctx}" to ORACLE_BANK in constants.ts.`
+        );
+      }
+    }
+  }
+
+  // Sanity-check: every MethodType is covered by one of the two lists above
+  const allCoveredMethods = new Set<MethodType>([...BASE_METHODS, ...CONTEXT_DEPENDENT_METHODS]);
+  for (const method of Object.values(MethodType)) {
+    if (!allCoveredMethods.has(method)) {
+      console.warn(
+        `[ORACLE_BANK] MethodType "${method}" is not listed in BASE_METHODS or CONTEXT_DEPENDENT_METHODS. ` +
+        `Add it to the appropriate list in the completeness check block in constants.ts.`
+      );
+    }
+  }
+}

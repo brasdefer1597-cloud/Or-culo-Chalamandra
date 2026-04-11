@@ -9,14 +9,16 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@google/genai": "^1.41.0",
+    "lucide-react": "^0.555.0",
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
-    "lucide-react": "^0.555.0",
-    "@google/genai": "latest"
+    "zod": "^3.24.4"
   },
   "devDependencies": {
     "@types/node": "^22.14.0",
     "@vitejs/plugin-react": "^5.0.0",
+    "sharp": "^0.33.5",
     "typescript": "~5.8.2",
     "vite": "^6.2.0"
   }

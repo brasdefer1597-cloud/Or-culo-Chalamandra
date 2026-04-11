@@ -13,7 +13,7 @@
 
 import React, { useMemo, useState, useCallback } from 'react';
 import { FormData, QuestionTemplate } from '../types';
-import { ORACLE_BANK, METHOD_IMAGES, oracleKey } from '../constants';
+import { ORACLE_BANK, METHOD_IMAGES, oracleKey, COLOR_TOKEN_MAP, DEFAULT_BORDER_CLASS, DEFAULT_TEXT_CLASS } from '../constants';
 import { useOracleAI } from '../hooks/useOracleAI';
 import { Button } from './Button';
 import { Mail, RefreshCw, Copy, Check, BrainCircuit, Loader2, AlertTriangle } from 'lucide-react';
@@ -23,25 +23,30 @@ interface OracleResultProps {
   onReset: () => void;
 }
 
-// ─── Helper: extrae solo la clase de borde de una string de color ─────────────
-// Ejemplo: "border-gray-200 text-gray-200" → "border-gray-200"
-//          "border-chala-magenta"          → "border-chala-magenta"
-const parseBorderClass = (color?: string): string => {
-  if (!color) return 'border-chala-green';
-  return color.split(' ').find(c => c.startsWith('border-')) ?? 'border-chala-green';
-};
+// ─── Helper: resuelve borderClass y textClass desde el mapa centralizado ──────
+// FIX: reemplaza parseBorderClass / parseTextClass (string splitting frágil)
+// con un lookup en COLOR_TOKEN_MAP. Cae en los defaults si la clave no existe.
+const resolveColorClasses = (color?: string): { borderClass: string; textClass: string } => {
+  if (!color) return { borderClass: DEFAULT_BORDER_CLASS, textClass: DEFAULT_TEXT_CLASS };
 
-// ─── Helper: convierte clase de borde a su equivalente de texto ───────────────
-// Ejemplo: "border-red-500" → "text-red-500"
-const parseTextClass = (color?: string): string => {
-  const borderClass = parseBorderClass(color);
-  return borderClass.replace('border-', 'text-');
+  // El color puede ser una sola clase ("border-red-500") o múltiples clases
+  // ("border-gray-200 text-gray-200"). Normalizamos a la clase de borde.
+  const borderCandidate = color.split(' ').find(c => c.startsWith('border-')) ?? color;
+
+  if (COLOR_TOKEN_MAP[borderCandidate]) {
+    return COLOR_TOKEN_MAP[borderCandidate];
+  }
+
+  // Fallback: deducción directa (cubre colores arbitrarios del banco)
+  return {
+    borderClass: borderCandidate,
+    textClass: borderCandidate.replace('border-', 'text-'),
+  };
 };
 
 // ─── Subcomponente: card individual de pregunta ───────────────────────────────
 const QuestionCard: React.FC<{ question: QuestionTemplate; index: number }> = ({ question, index }) => {
-  const borderClass = parseBorderClass(question.color);
-  const textClass   = parseTextClass(question.color);
+  const { borderClass, textClass } = resolveColorClasses(question.color);
 
   return (
     <div
@@ -97,14 +102,10 @@ const ErrorScreen: React.FC<{ message: string; onRetry: () => void; onReset: () 
 export const OracleResult: React.FC<OracleResultProps> = ({ data, onReset }) => {
   const { method, context, situation, useAI } = data;
 
-  // Situación activa: texto del usuario o fallback al nombre del personaje
   const activeSituation = situation.trim() || context;
 
-  // Estado de feedback para la acción "Copiar"
-  // Reemplaza alert() — no bloquea el hilo, da feedback visual
   const [copied, setCopied] = useState(false);
 
-  // Hook AI — encapsula toda la lógica de Gemini
   const {
     questions: aiQuestions,
     loading,
@@ -118,11 +119,9 @@ export const OracleResult: React.FC<OracleResultProps> = ({ data, onReset }) => 
     enabled: useAI,
   });
 
-  // Resolver preguntas: AI si está disponible, banco estático como fallback
   const questions = useMemo((): QuestionTemplate[] => {
     if (useAI && aiQuestions) return aiQuestions;
 
-    // Lookup compuesto (método + personaje) con fallback a solo método
     const key       = oracleKey(method, context);
     const templates = ORACLE_BANK[key] ?? ORACLE_BANK[method] ?? [];
 
@@ -155,7 +154,6 @@ export const OracleResult: React.FC<OracleResultProps> = ({ data, onReset }) => 
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
     } catch {
-      // Fallback para entornos sin permisos de clipboard
       const ta = document.createElement('textarea');
       ta.value = text;
       document.body.appendChild(ta);
@@ -167,7 +165,6 @@ export const OracleResult: React.FC<OracleResultProps> = ({ data, onReset }) => 
     }
   }, [questions]);
 
-  // ─── Guards de estado ─────────────────────────────────────────────────────────
   if (loading) return <LoadingScreen elapsed={elapsedTime} />;
   if (error)   return <ErrorScreen message={error} onRetry={retry} onReset={onReset} />;
 
@@ -198,6 +195,8 @@ export const OracleResult: React.FC<OracleResultProps> = ({ data, onReset }) => 
                 src={methodImage}
                 alt={`Ilustración: ${method}`}
                 loading="lazy"
+                width="176"
+                height="176"
                 className="relative w-32 h-32 md:w-44 md:h-44 object-contain drop-shadow-[0_0_18px_rgba(213,0,108,0.3)]"
               />
             </div>

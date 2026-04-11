@@ -7,11 +7,16 @@
  *
  * Separación de responsabilidades:
  *   - Componente → UI y estado visual
- *   - Este hook   → lógica AI, manejo de errores, timing
+ *   - Este hook   → llamada al proxy, validación de respuesta, timing
+ *
+ * Seguridad:
+ *   - La API key y la construcción del prompt ocurren EXCLUSIVAMENTE en el servidor
+ *   - El cliente solo envía { method, context, situation } — inputs de dominio
+ *   - Zod valida la respuesta del servidor antes de usarla en la UI
  */
 
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { GoogleGenAI, Type, Schema } from '@google/genai';
+import { z } from 'zod';
 import { MethodType, ContextType, QuestionTemplate } from '../types';
 
 interface UseOracleAIParams {
@@ -29,52 +34,40 @@ interface UseOracleAIResult {
   retry: () => void;
 }
 
-// Singleton del cliente AI — se instancia una sola vez en memoria.
-// Evita recrear el objeto en cada render o cada llamada.
-let aiClient: GoogleGenAI | null = null;
-const getAIClient = (): GoogleGenAI => {
-  if (!aiClient) {
-    aiClient = new GoogleGenAI({ apiKey: process.env.API_KEY ?? '' });
-  }
-  return aiClient;
-};
+// ─── Zod schema — valida en runtime la respuesta de Gemini ──────────────────
+const QuestionSchema = z.object({
+  heading: z.string().min(1),
+  text: z.string().min(1),
+  color: z.string().optional(),
+});
 
-// Schema de respuesta estructurada para Gemini
-const RESPONSE_SCHEMA: Schema = {
-  type: Type.ARRAY,
-  items: {
-    type: Type.OBJECT,
-    properties: {
-      heading: { type: Type.STRING },
-      text:    { type: Type.STRING },
-      color:   {
-        type: Type.STRING,
-        description: 'Tailwind border-color class (e.g. border-red-500)'
-      }
-    },
-    required: ['heading', 'text']
-  }
-};
+const ResponseSchema = z.array(QuestionSchema).min(1);
 
-const buildPrompt = (
+// ─── Llamada al proxy server-side ─────────────────────────────────────────────
+// El servidor construye y sanitiza el prompt. El cliente solo envía inputs de dominio.
+const callOracleProxy = async (
   method: MethodType,
   context: ContextType,
-  situation: string
-): string => `
-Eres el 'Oráculo Chalamandra', consejero estratégico de alto impacto.
-Tu voz es directa, callejera y profunda — mezcla de Chola, Malandra y Fresa.
+  situation: string,
+): Promise<string> => {
+  const response = await fetch('/api/oracle', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ method, context, situation }),
+  });
 
-METODOLOGÍA: ${method}
-PERSONAJE:    ${context}
-SITUACIÓN:    "${situation}"
+  if (!response.ok) {
+    const errBody = await response.json().catch(() => ({ error: response.statusText })) as { error?: string };
+    throw new Error(errBody.error ?? `Error ${response.status}`);
+  }
 
-Aplica la metodología paso a paso. Para cada paso entrega:
-- heading: nombre del paso (conciso, con emoji si aplica)
-- text:    análisis directo, pregunta de poder o insight accionable
-- color:   clase Tailwind de borde que refleje el tono emocional del paso
-
-Responde exclusivamente en JSON válido. Sin explicaciones extra.
-`.trim();
+  const data = await response.json() as {
+    candidates?: Array<{ content?: { parts?: Array<{ text?: string }> } }>;
+  };
+  const text = data?.candidates?.[0]?.content?.parts?.[0]?.text;
+  if (!text) throw new Error('Respuesta vacía del modelo');
+  return text;
+};
 
 export const useOracleAI = ({
   method,
@@ -87,29 +80,26 @@ export const useOracleAI = ({
   const [error, setError]         = useState<string | null>(null);
   const [elapsedTime, setElapsedTime] = useState(0);
 
-  // Ref para cancelar el timer si el componente se desmonta
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
-  // Timer de elapsed time — solo corre mientras `loading` es true
+  // Timer de elapsed time — FIX: reducido de 100ms → 500ms (−80% re-renders durante carga)
   useEffect(() => {
     if (loading) {
       setElapsedTime(0);
       timerRef.current = setInterval(() => {
-        setElapsedTime(t => parseFloat((t + 0.1).toFixed(1)));
-      }, 100);
+        setElapsedTime(t => parseFloat((t + 0.5).toFixed(1)));
+      }, 500);
     } else {
       if (timerRef.current) {
         clearInterval(timerRef.current);
         timerRef.current = null;
       }
     }
-    // Cleanup al desmontar
     return () => {
       if (timerRef.current) clearInterval(timerRef.current);
     };
   }, [loading]);
 
-  // Función de llamada estabilizada con useCallback para evitar closures stale
   const fetchAIResponse = useCallback(async () => {
     if (!enabled) return;
 
@@ -117,42 +107,34 @@ export const useOracleAI = ({
     setError(null);
 
     try {
-      const client = getAIClient();
-      const prompt = buildPrompt(method, context, situation);
+      // Envía inputs de dominio al proxy; el servidor construye el prompt
+      const jsonText = await callOracleProxy(method, context, situation);
 
-      const response = await client.models.generateContent({
-        model: 'gemini-2.0-flash',
-        contents: prompt,
-        config: {
-          responseMimeType: 'application/json',
-          responseSchema: RESPONSE_SCHEMA,
-        }
-      });
-
-      const jsonText = response.text;
-      if (!jsonText) throw new Error('Respuesta vacía del modelo');
-
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const parsed: any[] = JSON.parse(jsonText);
+      // Validación en runtime con Zod — reemplaza `any[]`
+      const rawParsed = JSON.parse(jsonText);
+      const parsed    = ResponseSchema.parse(rawParsed);
 
       const mapped: QuestionTemplate[] = parsed.map(item => ({
-        heading:  item.heading ?? '—',
-        template: item.text   ?? '',
-        text:     item.text   ?? '',
-        color:    item.color  ?? 'border-chala-magenta',
+        heading:  item.heading,
+        template: item.text,
+        text:     item.text,
+        color:    item.color ?? 'border-chala-magenta',
       }));
 
       setQuestions(mapped);
 
     } catch (err) {
       console.error('[useOracleAI]', err);
-      setError('La conexión con el Oráculo AI falló. Intenta de nuevo o usa el Modo Clásico.');
+      if (err instanceof z.ZodError) {
+        setError('El Oráculo devolvió datos inesperados. Intenta de nuevo.');
+      } else {
+        setError('La conexión con el Oráculo AI falló. Intenta de nuevo o usa el Modo Clásico.');
+      }
     } finally {
       setLoading(false);
     }
   }, [method, context, situation, enabled]);
 
-  // Trigger automático cuando se habilita el modo AI
   useEffect(() => {
     if (enabled && !questions) {
       fetchAIResponse();
